@@ -328,10 +328,8 @@ function drawRightStack(stack, events, {
                 const eventLeft = eventsLeftPadding + padding + index * eventWidth;
 
                 const eventRect = new Rect(
-                    // EventsLeftPadding + padding,
                     eventLeft,
                     eventRectY,
-                    // WidgetWidth - (eventsLeftPadding + padding * 3),
                     eventWidth,
                     eventHeight,
                 );
@@ -435,7 +433,6 @@ async function getEvents({numHours, calendars, excludedCalendars}) {
 
     let now = new Date();
     now = now.addMinutes(now.getMinutes() * -1);
-    const inNumberHours = now.addHours(numHours);
 
     const eventsByHour = {};
 
