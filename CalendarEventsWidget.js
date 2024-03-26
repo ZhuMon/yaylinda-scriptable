@@ -56,6 +56,8 @@ const WIDGET_CONFIGURATIONS = {
     // Calendar names can be found in the "Calendar" App. The name must be an exact string match.
     calendars: [],
 
+    excludedCalendars: [],
+
     // Calendar callback app
     // When clicking on the widget, which calendar app should open?
     // Must be one of the supported apps:
@@ -387,7 +389,7 @@ async function setBackground(widget, {useBackgroundImage, backgroundColor}) {
     }
 }
 
-async function getEvents({numHours, calendars}) {
+async function getEvents({numHours, calendars, excludedCalendars}) {
     const todayEvents = await CalendarEvent.today([]);
     const tomorrowEvents = await CalendarEvent.tomorrow([]);
     const combinedEvents = todayEvents.concat(tomorrowEvents);
@@ -398,6 +400,27 @@ async function getEvents({numHours, calendars}) {
 
     const eventsByHour = {};
 
+    function filterEvents(e, start, end) {
+        if (now >= end) {
+            return false;
+        }
+
+        if (calendars.length > 0 && !calendars.includes(e.calendar.title)) {
+            return false;
+        }
+
+        if (excludedCalendars.length > 0 && excludedCalendars.includes(e.calendar.title)) {
+            return false;
+        }
+
+        // If the title contains "canceled" or "cancelled", don't show it
+        if (e.title.toLowerCase().includes('canceled') || e.title.toLowerCase().includes('cancelled')) {
+            return false;
+        }
+
+        return true;
+    }
+
     for (const event of combinedEvents) {
         const start = new Date(event.startDate);
         const end = new Date(event.endDate);
@@ -405,7 +428,7 @@ async function getEvents({numHours, calendars}) {
         // Filter for events that:
         //   - start between now and numHours from now
         //   - are in the specified array of calendars (if any)
-        if (start <= inNumberHours && end > now && (calendars.length === 0 || calendars.includes(event.calendar.title))) {
+        if (filterEvents(event, start, end)) {
             if (event.isAllDay) { // All-day events
                 eventsByHour['all-day'] ||= [];
 
