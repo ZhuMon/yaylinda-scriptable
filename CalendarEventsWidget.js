@@ -82,7 +82,10 @@ const WIDGET_CONFIGURATIONS = {
     defaultTextSize: 10,
 
     // Larger text size in Widget
-    largeTextSize: 20,
+    largeTextSize: 25,
+
+    // Second large text size in Widget
+    secondLargeTextSize: 20,
 
     // Default text color in Widget
     defaultTextColor: Color.white(),
@@ -230,6 +233,7 @@ function drawRightStack(stack, events, {
     defaultTextColor,
     font,
     largeTextSize,
+    secondLargeTextSize,
     eventsTextColor,
     numHours,
     widgetHeight,
@@ -294,6 +298,10 @@ function drawRightStack(stack, events, {
         draw.drawText(`${currentHourText}`, new Point(0, topPointY));
     }
 
+    // Get character set width of the large text size
+    // assume width:height = 3:5
+    const charWidth = largeTextSize * 3 / 5;
+
     // Loop through all the hours and draw the events (on top of the lines)
     for (let i = 0; i < numHours; i++) {
         const currentHourDate = currentDate.addHours(i).truncateMinutes();
@@ -307,6 +315,9 @@ function drawRightStack(stack, events, {
             // Determine width of events based on num events in hour
             const eventWidth = (widgetWidth - (eventsLeftPadding + padding * 3)) / hourEvents.length;
 
+            // Determine how many character a text line should exist based on the event width
+            const lineCharNumber = Math.floor((eventWidth - padding * 4) / charWidth);
+            for (const [index, {startMinute, title, color, duration, eventLocation}] of hourEvents.entries()) {
                 // Determine top Y of event
                 const eventRectY = topPointY + Math.floor((startMinute * halfHourEventHeight) / 30);
 
@@ -334,7 +345,34 @@ function drawRightStack(stack, events, {
                 // Draw event name text
                 draw.setTextColor(eventsTextColor);
                 draw.setFont(new Font(font, largeTextSize));
-                draw.drawText(`${title}`, new Point(eventsLeftPadding + padding + padding, eventRectY + padding / 2));
+                const wordWrapTitle = title.match(new RegExp(`.{1,${lineCharNumber}}`, 'g')).join('\n');
+
+                // If title line is so many, truncate it
+                if (wordWrapTitle.split('\n').length * largeTextSize > eventHeight) {
+                    const truncatedTitle = wordWrapTitle.split('\n').slice(0, Math.floor(eventHeight / largeTextSize)).join('\n');
+                    draw.drawText(`${truncatedTitle}`, new Point(eventLeft + padding + padding, eventRectY + padding / 2));
+                } else {
+                    draw.drawText(`${wordWrapTitle}`, new Point(eventLeft + padding + padding, eventRectY + padding / 2));
+                }
+
+                // Draw event location text
+                draw.setFont(new Font(font, secondLargeTextSize));
+                if (eventLocation) {
+                    // Const wordWrapLocation = eventLocation.match(/.{1,lineCharNum}/g).join('\n');
+                    const wordWrapLocation = eventLocation.match(new RegExp(`.{1,${lineCharNumber}}`, 'g')).join('\n');
+                    // According to the height of the title and the event, change the location of the location text
+                    const appendY = (largeTextSize + padding) * (wordWrapTitle.split('\n').length);
+                    // If the location text will be out of the event, don't draw it
+                    const locationTextHeight = largeTextSize * (wordWrapLocation.split('\n').length);
+                    if (eventHeight - appendY > locationTextHeight) {
+                        if (wordWrapLocation.split('\n').length * secondLargeTextSize > eventHeight - appendY) {
+                            const truncatedLocation = wordWrapLocation.split('\n').slice(0, Math.floor((eventHeight - appendY) / secondLargeTextSize)).join('\n');
+                            draw.drawText(`${truncatedLocation}`, new Point(eventLeft + padding + padding, eventRectY + padding / 2 + appendY));
+                        } else {
+                            draw.drawText(`${wordWrapLocation}`, new Point(eventLeft + padding + padding, eventRectY + padding / 2 + appendY));
+                        }
+                    }
+                }
             }
         }
     }
@@ -451,6 +489,7 @@ async function getEvents({numHours, calendars, excludedCalendars}) {
                     title: event.title,
                     color: `#${event.calendar.color.hex}`,
                     duration: eventDuration,
+                    eventLocation: event.location,
                 };
 
                 eventsByHour[hourKey].push(eventObject);
@@ -468,6 +507,7 @@ async function getEvents({numHours, calendars, excludedCalendars}) {
                     title: event.title,
                     color: `#${event.calendar.color.hex}`,
                     duration: eventDuration,
+                    eventLocation: event.location,
                 };
 
                 eventsByHour[hourKey].push(eventObject);
