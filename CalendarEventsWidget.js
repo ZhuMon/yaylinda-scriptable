@@ -18,6 +18,14 @@ Date.prototype.addMinutes = function (numberMinutes) {
     return date;
 };
 
+Date.prototype.truncateMinutes = function () {
+    const date = new Date(this.valueOf());
+    date.setMinutes(0);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    return date;
+};
+
 /* =============================================================================
  * WIDGET CONFIGURATIONS *** CONFIGURE ME!!! ***
  ============================================================================ */
@@ -236,7 +244,24 @@ function drawRightStack(stack, events, {
     draw.respectScreenScale = true;
     draw.size = new Size(widgetWidth, widgetHeight);
 
-    const currentDate = new Date();
+    // Get the most near future event starts date
+    let nearestFutureEventKey = null;
+    for (const key in events) {
+        if (key === 'all-day') {
+            continue;
+        }
+
+        const eventDate = new Date(key);
+        if (eventDate >= new Date()) {
+            if (!nearestFutureEventKey) {
+                nearestFutureEventKey = key;
+            } else if (eventDate < new Date(nearestFutureEventKey)) {
+                nearestFutureEventKey = key;
+            }
+        }
+    }
+
+    const currentDate = new Date(nearestFutureEventKey);
 
     // Loop through all the hours and draw the lines
     for (let i = 0; i < numHours; i++) {
@@ -268,14 +293,13 @@ function drawRightStack(stack, events, {
 
     // Loop through all the hours and draw the events (on top of the lines)
     for (let i = 0; i < numHours; i++) {
-        const currentHourDate = currentDate.addHours(i);
-        const currentHourText = HOUR_FORMAT.format(currentHourDate);
+        const currentHourDate = currentDate.addHours(i).truncateMinutes();
 
         const topPointY = halfHourEventHeight * 2 * i;
         const midPointY = topPointY + halfHourEventHeight;
 
         // Draw events for this hour (if any)
-        const hourEvents = events[currentHourText];
+        const hourEvents = events[currentHourDate];
         if (hourEvents) {
             // Determine width of events based on num events in hour
             const eventWidth = (widgetWidth - (eventsLeftPadding + padding * 3)) / hourEvents.length;
@@ -313,7 +337,7 @@ function drawRightStack(stack, events, {
     }
 
     // Draw line at the current time
-    const currentMinute = new Date().getMinutes();
+    const currentMinute = currentDate.getMinutes();
     const currentMinuteY = (currentMinute * halfHourEventHeight) / 30;
     const currentMinutePath = new Path();
     currentMinutePath.addRect(new Rect(eventsLeftPadding, currentMinuteY, widgetWidth, lineHeight));
@@ -390,7 +414,7 @@ async function getEvents({numHours, calendars}) {
                     color: `#${event.calendar.color.hex}`,
                 });
             } else if (start < now && end > now) { // Events that started before the current hour, but have not yet ended
-                const hourKey = HOUR_FORMAT.format(now);
+                const hourKey = now.truncateMinutes();
 
                 eventsByHour[hourKey] ||= [];
 
@@ -407,7 +431,7 @@ async function getEvents({numHours, calendars}) {
 
                 eventsByHour[hourKey].push(eventObject);
             } else { // Events that start between now and inNumHours
-                const hourKey = HOUR_FORMAT.format(start);
+                const hourKey = start.truncateMinutes();
 
                 eventsByHour[hourKey] ||= [];
 
