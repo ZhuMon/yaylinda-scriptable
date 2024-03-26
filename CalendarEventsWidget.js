@@ -277,8 +277,8 @@ function drawRightStack(stack, events, {
         // Draw events for this hour (if any)
         const hourEvents = events[currentHourText];
         if (hourEvents) {
-            for (const {startMinute, title, color, duration} of hourEvents) {
-                // TODO - determine width of events based on num events in hour
+            // Determine width of events based on num events in hour
+            const eventWidth = (widgetWidth - (eventsLeftPadding + padding * 3)) / hourEvents.length;
 
                 // Determine top Y of event
                 const eventRectY = topPointY + Math.floor((startMinute * halfHourEventHeight) / 30);
@@ -286,10 +286,15 @@ function drawRightStack(stack, events, {
                 // Determine height of events
                 const eventHeight = Math.floor((duration * halfHourEventHeight) / 30);
 
+                // Determine left X of event
+                const eventLeft = eventsLeftPadding + padding + index * eventWidth;
+
                 const eventRect = new Rect(
-                    eventsLeftPadding + padding,
+                    // EventsLeftPadding + padding,
+                    eventLeft,
                     eventRectY,
-                    widgetWidth - (eventsLeftPadding + padding * 3),
+                    // WidgetWidth - (eventsLeftPadding + padding * 3),
+                    eventWidth,
                     eventHeight,
                 );
                 const eventPath = new Path();
