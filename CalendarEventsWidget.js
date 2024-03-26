@@ -35,9 +35,9 @@ const HOUR_FORMAT = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
 });
 
-// Example: Saturday
+// Example: Sat
 const DAY_OF_WEEK_FORMAT = new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
+    weekday: 'short',
 });
 
 // Example: 12
@@ -50,7 +50,7 @@ const DAY_OF_MONTH_FORMAT = new Intl.DateTimeFormat('en-US', {
  */
 const WIDGET_CONFIGURATIONS = {
     // Number of hours to show in the agenda
-    numHours: 6,
+    numHours: 8,
 
     // Calendars to show events from. Empty array means all calendars.
     // Calendar names can be found in the "Calendar" App. The name must be an exact string match.
@@ -67,7 +67,7 @@ const WIDGET_CONFIGURATIONS = {
     callbackCalendarApp: 'calshow',
 
     // Whether or not to use a background image for the widget
-    useBackgroundImage: true,
+    useBackgroundImage: false,
 
     // If no background, default grayish background color gradient
     backgroundColor: [new Color('#29323c'), new Color('#1c1c1c')],
@@ -94,10 +94,10 @@ const WIDGET_CONFIGURATIONS = {
     smallSpacer: 5,
 
     // Height of Widget's Draw Context
-    widgetHeight: 400,
+    widgetHeight: 800,
 
     // Width of Widget's Draw Context
-    widgetWidth: 400,
+    widgetWidth: 600,
 
     // Default padding in Draw Context
     padding: 10,
@@ -153,7 +153,7 @@ if (config.runsInWidget) {
 function drawWidget(widget, events, WIDGET_CONFIGURATIONS) {
     const mainStack = widget.addStack();
     mainStack.layoutHorizontally();
-    mainStack.spacing = 30;
+    mainStack.spacing = 10;
 
     // Left stack contains date, and all day events
     const leftStack = mainStack.addStack();
@@ -179,7 +179,8 @@ function drawLeftStack(stack, events, {
     const currentDate = new Date();
 
     const dateStack = stack.addStack();
-    dateStack.layoutHorizontally();
+    // DateStack.layoutHorizontally();
+    dateStack.layoutVertically();
 
     const dowText = dateStack.addText(DAY_OF_WEEK_FORMAT.format(currentDate).toUpperCase());
     dowText.textColor = defaultTextColor;
